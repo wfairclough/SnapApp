@@ -211,9 +211,6 @@ class ShortcutManager: ObservableObject {
     func registerAllHotkeys() {
         AppLogger.shared.info("Registering all enabled hotkeys...")
         
-        // First unregister any existing hotkeys to avoid duplicates
-        GlobalHotkeyManager.shared.unregisterAllHotkeys()
-        
         for shortcut in shortcuts {
             if shortcut.isEnabled {
                 let success = GlobalHotkeyManager.shared.registerHotkey(shortcut)
@@ -226,5 +223,15 @@ class ShortcutManager: ObservableObject {
         }
         
         AppLogger.shared.info("Hotkey registration complete")
+    }
+    
+    func reregisterAllHotkeys() {
+        AppLogger.shared.info("Re-registering all hotkeys...")
+        
+        // First unregister any existing hotkeys
+        GlobalHotkeyManager.shared.unregisterAllHotkeys()
+        
+        // Then register all enabled shortcuts
+        registerAllHotkeys()
     }
 }

@@ -43,8 +43,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func applicationDidBecomeActive() {
         // Re-check and register hotkeys when app becomes active
         // This handles cases where user granted permissions while app was running
-        AppLogger.shared.info("App became active, checking hotkey registration...")
-        setupHotkeysWithPermissionCheck()
+        AppLogger.shared.info("App became active, re-registering hotkeys...")
+        
+        let hasPermission = GlobalHotkeyManager.shared.checkAccessibilityPermissions()
+        AppLogger.shared.info("Accessibility permission status: \(hasPermission)")
+        
+        // Use reregisterAllHotkeys to clear and re-register everything
+        ShortcutManager.shared.reregisterAllHotkeys()
     }
     
     private func setupHotkeysWithPermissionCheck() {

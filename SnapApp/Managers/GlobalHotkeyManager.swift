@@ -13,6 +13,7 @@ class GlobalHotkeyManager {
     static let shared = GlobalHotkeyManager()
     
     private var registeredHotkeys: [UInt32: Shortcut] = [:]
+    private var hotkeyRefs: [UInt32: EventHotKeyRef] = [:]
     private var nextHotkeyID: UInt32 = 1
     
     private init() {
@@ -65,6 +66,9 @@ class GlobalHotkeyManager {
         
         if result == noErr {
             registeredHotkeys[hotkeyID] = shortcut
+            if let ref = hotkeyRef {
+                hotkeyRefs[hotkeyID] = ref
+            }
             AppLogger.shared.info("Successfully registered hotkey: \(shortcut.name) with ID \(hotkeyID)")
             return true
         } else {
@@ -149,9 +153,19 @@ class GlobalHotkeyManager {
         // Find and remove the hotkey
         for (hotkeyID, registeredShortcut) in registeredHotkeys {
             if registeredShortcut.id == shortcut.id {
-                // Note: GetEventHotKey is not available in sandbox, so we'll track refs differently
-                // For now, just remove from our tracking
+                // Unregister the actual hotkey with Carbon
+                if let hotkeyRef = hotkeyRefs[hotkeyID] {
+                    let result = UnregisterEventHotKey(hotkeyRef)
+                    if result == noErr {
+                        AppLogger.shared.info("Successfully unregistered Carbon hotkey: \(shortcut.name)")
+                    } else {
+                        AppLogger.shared.warning("Failed to unregister Carbon hotkey: \(shortcut.name), error: \(result)")
+                    }
+                }
+                
+                // Remove from our tracking
                 registeredHotkeys.removeValue(forKey: hotkeyID)
+                hotkeyRefs.removeValue(forKey: hotkeyID)
                 AppLogger.shared.info("Unregistered hotkey: \(shortcut.name)")
                 break
             }
@@ -159,10 +173,23 @@ class GlobalHotkeyManager {
     }
     
     func unregisterAllHotkeys() {
-        for (_, shortcut) in registeredHotkeys {
+        AppLogger.shared.info("Unregistering all hotkeys...")
+        
+        for (hotkeyID, shortcut) in registeredHotkeys {
+            // Unregister the actual hotkey with Carbon
+            if let hotkeyRef = hotkeyRefs[hotkeyID] {
+                let result = UnregisterEventHotKey(hotkeyRef)
+                if result == noErr {
+                    AppLogger.shared.info("Successfully unregistered Carbon hotkey: \(shortcut.name)")
+                } else {
+                    AppLogger.shared.warning("Failed to unregister Carbon hotkey: \(shortcut.name), error: \(result)")
+                }
+            }
             AppLogger.shared.info("Unregistered hotkey: \(shortcut.name)")
         }
+        
         registeredHotkeys.removeAll()
+        hotkeyRefs.removeAll()
         AppLogger.shared.info("All hotkeys unregistered")
     }
     
