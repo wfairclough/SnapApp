@@ -13,8 +13,12 @@ struct SnapAppApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var delegate
     
     var body: some Scene {
-        Settings {
-            PreferencesView()
+        // Empty scene body since we're using menubar-only app
+        // The preferences window is handled by the AppDelegate
+        WindowGroup {
+            EmptyView()
         }
+        .windowStyle(.hiddenTitleBar)
+        .windowResizability(.contentSize)
     }
 }

@@ -10,6 +10,7 @@ import SwiftUI
 
 class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusBarItem: NSStatusItem!
+    private var settingsWindow: NSWindow?
     
     func applicationDidFinishLaunching(_ aNotification: Notification) {
         AppLogger.shared.info("SnapApp starting up...")
@@ -47,7 +48,36 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     @objc private func openPreferences() {
-        NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+        if let settingsWindow = settingsWindow {
+            settingsWindow.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+            return
+        }
+        
+        // Create a new settings window
+        let preferencesView = PreferencesView()
+        let hostingController = NSHostingController(rootView: preferencesView)
+        
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 500, height: 400),
+            styleMask: [.titled, .closable, .resizable],
+            backing: .buffered,
+            defer: false
+        )
+        
+        window.title = "SnapApp Preferences"
+        window.contentViewController = hostingController
+        window.center()
+        window.setFrameAutosaveName("PreferencesWindow")
+        
+        // Store reference and show window
+        settingsWindow = window
+        window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+        
+        // Clear reference when window closes
+        NotificationCenter.default.addObserver(forName: NSWindow.willCloseNotification, object: window, queue: .main) { [weak self] _ in
+            self?.settingsWindow = nil
+        }
     }
 }
