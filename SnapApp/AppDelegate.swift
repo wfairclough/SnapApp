@@ -18,6 +18,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Hide dock icon
         NSApp.setActivationPolicy(.accessory)
         
+        // Hide any existing windows (from the Window scene)
+        DispatchQueue.main.async {
+            for window in NSApp.windows {
+                window.orderOut(nil)
+            }
+        }
+        
         // Create status bar item
         setupStatusBarItem()
         
