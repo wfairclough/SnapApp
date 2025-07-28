@@ -18,9 +18,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Hide dock icon
         NSApp.setActivationPolicy(.accessory)
         
-        // Hide any existing windows (from the Window scene)
-        DispatchQueue.main.async {
-            for window in NSApp.windows {
+        // Hide the main SwiftUI window after a brief delay
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            if let window = NSApp.windows.first {
                 window.orderOut(nil)
             }
         }
@@ -45,6 +45,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
         
         AppLogger.shared.info("SnapApp successfully launched as menubar app")
+    }
+    
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+        // Don't terminate when windows close - this is a menubar app
+        return false
     }
     
     @objc private func applicationDidBecomeActive() {

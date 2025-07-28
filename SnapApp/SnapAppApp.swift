@@ -13,13 +13,13 @@ struct SnapAppApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var delegate
     
     var body: some Scene {
-        // Create a window that never appears - the AppDelegate handles all UI
-        Window("SnapApp", id: "main") {
+        // Minimal scene - AppDelegate handles all UI
+        WindowGroup {
             EmptyView()
+                .frame(width: 0, height: 0)
+                .hidden()
         }
         .windowStyle(.hiddenTitleBar)
         .windowResizability(.contentSize)
-        .defaultSize(width: 0, height: 0)
-        .windowLevel(.floating)
     }
 }
