@@ -21,6 +21,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Create status bar item
         setupStatusBarItem()
         
+        // Trigger accessibility permission request on startup
+        // This will make the app appear in System Settings if it doesn't have permission
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            let hasPermission = GlobalHotkeyManager.shared.checkAccessibilityPermissions()
+            AppLogger.shared.info("Accessibility permission status: \(hasPermission)")
+            if !hasPermission {
+                AppLogger.shared.info("App will appear in System Settings accessibility list after attempting to use features")
+            }
+        }
+        
         AppLogger.shared.info("SnapApp successfully launched as menubar app")
     }
     

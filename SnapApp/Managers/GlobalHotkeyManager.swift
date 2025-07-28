@@ -168,7 +168,27 @@ class GlobalHotkeyManager {
     }
     
     func checkAccessibilityPermissions() -> Bool {
-        return AXIsProcessTrusted()
+        // First check if we already have permission
+        let isTrusted = AXIsProcessTrusted()
+        
+        if !isTrusted {
+            // Try to register a dummy hotkey to trigger the permission dialog
+            // This will make the app appear in System Settings accessibility list
+            let result = RegisterEventHotKey(
+                UInt32(0), // A key (we won't actually use this)
+                UInt32(cmdKey | shiftKey | controlKey | optionKey), // All modifiers
+                EventHotKeyID(signature: OSType(999999), id: 999999), // Dummy ID
+                GetApplicationEventTarget(),
+                0,
+                nil
+            )
+            
+            if result != noErr {
+                AppLogger.shared.info("Attempted to register dummy hotkey to trigger accessibility prompt")
+            }
+        }
+        
+        return isTrusted
     }
     
     func requestAccessibilityPermissions() {
