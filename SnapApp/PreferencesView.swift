@@ -81,21 +81,21 @@ struct PreferencesView: View {
                 
                 // Status info
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Phase 2: Shortcut Detection ✓")
+                    Text("Phase 3: Command Execution ✓")
                         .font(.caption)
                         .foregroundColor(.green)
                     
-                    Text("• Global hotkey registration ✓")
+                    Text("• Bash command execution ✓")
                         .font(.caption2)
                         .foregroundColor(.secondary)
                     
-                    Text("• Shortcut management ✓")
+                    Text("• Security warnings ✓")
                         .font(.caption2)
                         .foregroundColor(.secondary)
                     
-                    Text("• Next: Command execution")
+                    Text("• Timeout & error handling ✓")
                         .font(.caption2)
-                        .foregroundColor(.orange)
+                        .foregroundColor(.secondary)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 20)

@@ -64,15 +64,52 @@ class ShortcutManager: ObservableObject {
         AppLogger.shared.info("Executing shortcut: \(shortcut.name)")
         AppLogger.shared.debug("Command: \(shortcut.command)")
         
-        // Placeholder for command execution - will be implemented in Phase 3
-        // For now, just log that the shortcut was triggered
-        DispatchQueue.main.async {
-            let alert = NSAlert()
-            alert.messageText = "SnapApp"
-            alert.informativeText = "Shortcut '\(shortcut.name)' would execute:\n\(shortcut.command)\n\n(Command execution will be implemented in Phase 3)"
-            alert.addButton(withTitle: "OK")
-            alert.runModal()
+        Task {
+            let result = await CommandExecutor.shared.executeCommand(shortcut.command)
+            
+            await MainActor.run {
+                showCommandResult(for: shortcut, result: result)
+            }
         }
+    }
+    
+    private func showCommandResult(for shortcut: Shortcut, result: CommandResult) {
+        let alert = NSAlert()
+        
+        if result.exitCode == 0 {
+            alert.messageText = "Command Executed Successfully"
+            alert.alertStyle = .informational
+            
+            if result.output.isEmpty {
+                alert.informativeText = "Shortcut '\(shortcut.name)' completed successfully.\n\nExecution time: \(String(format: "%.2f", result.executionTime))s"
+            } else {
+                alert.informativeText = "Shortcut '\(shortcut.name)' completed successfully.\n\nOutput:\n\(result.output.trimmingCharacters(in: .whitespacesAndNewlines))\n\nExecution time: \(String(format: "%.2f", result.executionTime))s"
+            }
+        } else if result.exitCode == -1 {
+            alert.messageText = "Command Failed"
+            alert.alertStyle = .critical
+            alert.informativeText = "Shortcut '\(shortcut.name)' failed to execute.\n\nError: \(result.error)"
+        } else {
+            alert.messageText = "Command Completed with Errors"
+            alert.alertStyle = .warning
+            
+            var message = "Shortcut '\(shortcut.name)' completed with exit code \(result.exitCode)."
+            
+            if !result.output.isEmpty {
+                message += "\n\nOutput:\n\(result.output.trimmingCharacters(in: .whitespacesAndNewlines))"
+            }
+            
+            if !result.error.isEmpty {
+                message += "\n\nError:\n\(result.error.trimmingCharacters(in: .whitespacesAndNewlines))"
+            }
+            
+            message += "\n\nExecution time: \(String(format: "%.2f", result.executionTime))s"
+            
+            alert.informativeText = message
+        }
+        
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
     }
     
     func testShortcut(_ shortcut: Shortcut) {
