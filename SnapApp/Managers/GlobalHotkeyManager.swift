@@ -44,14 +44,18 @@ class GlobalHotkeyManager {
             carbonModifiers |= UInt32(shiftKey)
         }
         
-        AppLogger.shared.info("Registering hotkey: \(shortcut.name), keyCode: \(shortcut.keyCode), carbonModifiers: \(carbonModifiers), display: \(shortcut.displayString)")
+        // Get the correct virtual key code for Carbon Event Manager
+        let virtualKeyCode = getVirtualKeyCode(for: shortcut.keyCode, modifierFlags: shortcut.modifierFlags)
+        
+        AppLogger.shared.info("Registering hotkey: \(shortcut.name), originalKeyCode: \(shortcut.keyCode), virtualKeyCode: \(virtualKeyCode), carbonModifiers: \(carbonModifiers), display: \(shortcut.displayString)")
+        print("DEBUG: GlobalHotkeyManager registering - originalKeyCode: \(shortcut.keyCode), virtualKeyCode: \(virtualKeyCode), carbonModifiers: \(carbonModifiers), name: \(shortcut.name)")
         
         // Install event handler if not already installed
         installEventHandlerIfNeeded()
         
         var hotkeyRef: EventHotKeyRef?
         let result = RegisterEventHotKey(
-            UInt32(shortcut.keyCode),
+            UInt32(virtualKeyCode),
             carbonModifiers,
             EventHotKeyID(signature: OSType(hotkeyID), id: hotkeyID),
             GetApplicationEventTarget(),
@@ -66,6 +70,78 @@ class GlobalHotkeyManager {
         } else {
             AppLogger.shared.error("Failed to register hotkey: \(shortcut.name), error: \(result)")
             return false
+        }
+    }
+    
+    private func getVirtualKeyCode(for keyCode: Int, modifierFlags: NSEvent.ModifierFlags) -> Int {
+        // For letter keys with shift modifier, we need to ensure we're using the base virtual key code
+        // Carbon Event Manager expects virtual key codes, not character codes
+        
+        // Common letter key mappings (these are virtual key codes that work with Carbon)
+        switch keyCode {
+        case 0: return 0    // A
+        case 1: return 1    // S
+        case 2: return 2    // D
+        case 3: return 3    // F
+        case 4: return 4    // H
+        case 5: return 5    // G
+        case 6: return 6    // Z
+        case 7: return 7    // X
+        case 8: return 8    // C
+        case 9: return 9    // V
+        case 11: return 11  // B
+        case 12: return 12  // Q
+        case 13: return 13  // W
+        case 14: return 14  // E
+        case 15: return 15  // R
+        case 16: return 16  // Y
+        case 17: return 17  // T
+        case 31: return 31  // O
+        case 32: return 32  // U
+        case 34: return 34  // I
+        case 35: return 35  // P
+        case 37: return 37  // L
+        case 38: return 38  // J
+        case 40: return 40  // K
+        case 45: return 45  // N
+        case 46: return 46  // M
+        
+        // Number keys
+        case 18: return 18  // 1
+        case 19: return 19  // 2
+        case 20: return 20  // 3
+        case 21: return 21  // 4
+        case 22: return 22  // 6
+        case 23: return 23  // 5
+        case 25: return 25  // 9
+        case 26: return 26  // 7
+        case 28: return 28  // 8
+        case 29: return 29  // 0
+        
+        // Function keys
+        case 122: return 122 // F1
+        case 120: return 120 // F2
+        case 99: return 99   // F3
+        case 118: return 118 // F4
+        case 96: return 96   // F5
+        case 97: return 97   // F6
+        case 98: return 98   // F7
+        case 100: return 100 // F8
+        case 101: return 101 // F9
+        case 109: return 109 // F10
+        case 103: return 103 // F11
+        case 111: return 111 // F12
+        
+        // Special keys
+        case 36: return 36   // Return
+        case 48: return 48   // Tab
+        case 49: return 49   // Space
+        case 51: return 51   // Delete
+        case 53: return 53   // Escape
+        
+        default:
+            // For other keys, return the original keyCode
+            return keyCode
         }
     }
     
@@ -154,6 +230,7 @@ class GlobalHotkeyManager {
             
             if let shortcut = registeredHotkeys[id] {
                 AppLogger.shared.info("Hotkey triggered: \(shortcut.name)")
+                print("DEBUG: Hotkey triggered - id: \(id), name: \(shortcut.name), keyCode: \(shortcut.keyCode)")
                 
                 // Execute the shortcut on the main thread
                 DispatchQueue.main.async {
@@ -161,6 +238,8 @@ class GlobalHotkeyManager {
                 }
                 
                 return noErr
+            } else {
+                print("DEBUG: Hotkey triggered but no shortcut found for id: \(id)")
             }
         }
         

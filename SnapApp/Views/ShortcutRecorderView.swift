@@ -125,6 +125,7 @@ class ShortcutRecorderNSView: NSView {
         // Only accept shortcuts with at least one modifier
         let modifiers = event.modifierFlags.intersection([.command, .option, .control, .shift])
         if !modifiers.isEmpty {
+            print("DEBUG: Recording shortcut - keyCode: \(event.keyCode), modifiers: \(modifiers)")
             delegate?.shortcutRecorded(keyCode: Int(event.keyCode), modifierFlags: modifiers)
         }
     }
