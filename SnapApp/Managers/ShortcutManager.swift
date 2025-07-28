@@ -118,8 +118,13 @@ class ShortcutManager: ObservableObject {
         Task {
             let result = await CommandExecutor.shared.executeCommand(shortcut.command)
             
-            await MainActor.run {
-                showCommandResult(for: shortcut, result: result)
+            // Log the result but don't show UI dialog for global shortcuts
+            AppLogger.shared.info("Shortcut '\(shortcut.name)' completed with exit code: \(result.exitCode)")
+            if !result.output.isEmpty {
+                AppLogger.shared.debug("Output: \(result.output)")
+            }
+            if !result.error.isEmpty {
+                AppLogger.shared.debug("Error: \(result.error)")
             }
         }
     }
@@ -164,7 +169,16 @@ class ShortcutManager: ObservableObject {
     }
     
     func testShortcut(_ shortcut: Shortcut) {
-        executeShortcut(withId: shortcut.id)
+        AppLogger.shared.info("Testing shortcut: \(shortcut.name)")
+        AppLogger.shared.debug("Command: \(shortcut.command)")
+        
+        Task {
+            let result = await CommandExecutor.shared.executeCommand(shortcut.command)
+            
+            await MainActor.run {
+                showCommandResult(for: shortcut, result: result)
+            }
+        }
     }
     
     private func saveShortcuts() {
