@@ -23,8 +23,29 @@ class ShortcutManager: ObservableObject {
     func addShortcut(_ shortcut: Shortcut) {
         AppLogger.shared.info("Adding shortcut: \(shortcut.name)")
         
+        // Handle conflicts by disabling existing shortcuts with same key combination
         if hasConflict(shortcut) {
             AppLogger.shared.warning("Shortcut conflict detected for: \(shortcut.displayString)")
+            
+            // Disable conflicting shortcuts
+            for index in shortcuts.indices {
+                let existing = shortcuts[index]
+                if existing.keyCode == shortcut.keyCode &&
+                   existing.modifierFlags == shortcut.modifierFlags &&
+                   existing.isEnabled {
+                    
+                    AppLogger.shared.info("Disabling conflicting shortcut: \(existing.name)")
+                    shortcuts[index] = Shortcut(
+                        id: existing.id,
+                        name: existing.name,
+                        keyCode: existing.keyCode,
+                        modifierFlags: existing.modifierFlags,
+                        command: existing.command,
+                        isEnabled: false,
+                        createdDate: existing.createdDate
+                    )
+                }
+            }
         }
         
         shortcuts.append(shortcut)

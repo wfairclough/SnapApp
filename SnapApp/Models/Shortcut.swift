@@ -27,6 +27,16 @@ struct Shortcut: Codable, Identifiable {
         self.createdDate = Date()
     }
     
+    init(id: UUID, name: String, keyCode: Int, modifierFlags: NSEvent.ModifierFlags, command: String, isEnabled: Bool, createdDate: Date) {
+        self.id = id
+        self.name = name
+        self.keyCode = keyCode
+        self.modifierFlags = modifierFlags
+        self.command = command
+        self.isEnabled = isEnabled
+        self.createdDate = createdDate
+    }
+    
     var displayString: String {
         var components: [String] = []
         
