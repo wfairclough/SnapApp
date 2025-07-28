@@ -21,17 +21,44 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Create status bar item
         setupStatusBarItem()
         
-        // Trigger accessibility permission request on startup
-        // This will make the app appear in System Settings if it doesn't have permission
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            let hasPermission = GlobalHotkeyManager.shared.checkAccessibilityPermissions()
-            AppLogger.shared.info("Accessibility permission status: \(hasPermission)")
-            if !hasPermission {
-                AppLogger.shared.info("App will appear in System Settings accessibility list after attempting to use features")
-            }
+        // Initialize ShortcutManager early to load shortcuts
+        _ = ShortcutManager.shared
+        
+        // Set up notification observers for app activation
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(applicationDidBecomeActive),
+            name: NSApplication.didBecomeActiveNotification,
+            object: nil
+        )
+        
+        // Trigger accessibility permission request and register hotkeys after startup
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            self.setupHotkeysWithPermissionCheck()
         }
         
         AppLogger.shared.info("SnapApp successfully launched as menubar app")
+    }
+    
+    @objc private func applicationDidBecomeActive() {
+        // Re-check and register hotkeys when app becomes active
+        // This handles cases where user granted permissions while app was running
+        AppLogger.shared.info("App became active, checking hotkey registration...")
+        setupHotkeysWithPermissionCheck()
+    }
+    
+    private func setupHotkeysWithPermissionCheck() {
+        let hasPermission = GlobalHotkeyManager.shared.checkAccessibilityPermissions()
+        AppLogger.shared.info("Accessibility permission status: \(hasPermission)")
+        
+        if hasPermission {
+            // Register all hotkeys since we have permission
+            ShortcutManager.shared.registerAllHotkeys()
+        } else {
+            AppLogger.shared.info("App will appear in System Settings accessibility list after attempting to use features")
+            // Still try to register hotkeys - this will make the app appear in accessibility settings
+            ShortcutManager.shared.registerAllHotkeys()
+        }
     }
     
     private func setupStatusBarItem() {

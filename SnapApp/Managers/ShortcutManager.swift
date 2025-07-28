@@ -201,19 +201,30 @@ class ShortcutManager: ObservableObject {
             shortcuts = try JSONDecoder().decode([Shortcut].self, from: data)
             AppLogger.shared.info("Loaded \(shortcuts.count) shortcuts from UserDefaults")
             
-            // Register all enabled hotkeys on startup
-            for shortcut in shortcuts {
-                if shortcut.isEnabled {
-                    let success = GlobalHotkeyManager.shared.registerHotkey(shortcut)
-                    if success {
-                        AppLogger.shared.info("Registered startup hotkey: \(shortcut.name)")
-                    } else {
-                        AppLogger.shared.warning("Failed to register startup hotkey: \(shortcut.name)")
-                    }
-                }
-            }
+            // Don't register hotkeys here - they will be registered when the app is fully ready
+            AppLogger.shared.info("Shortcuts loaded, hotkey registration will occur after app startup")
         } catch {
             AppLogger.shared.error("Failed to load shortcuts: \(error)")
         }
+    }
+    
+    func registerAllHotkeys() {
+        AppLogger.shared.info("Registering all enabled hotkeys...")
+        
+        // First unregister any existing hotkeys to avoid duplicates
+        GlobalHotkeyManager.shared.unregisterAllHotkeys()
+        
+        for shortcut in shortcuts {
+            if shortcut.isEnabled {
+                let success = GlobalHotkeyManager.shared.registerHotkey(shortcut)
+                if success {
+                    AppLogger.shared.info("Registered hotkey: \(shortcut.name)")
+                } else {
+                    AppLogger.shared.warning("Failed to register hotkey: \(shortcut.name)")
+                }
+            }
+        }
+        
+        AppLogger.shared.info("Hotkey registration complete")
     }
 }
