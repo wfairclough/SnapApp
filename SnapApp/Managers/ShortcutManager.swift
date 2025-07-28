@@ -35,6 +35,10 @@ class ShortcutManager: ObservableObject {
                    existing.isEnabled {
                     
                     AppLogger.shared.info("Disabling conflicting shortcut: \(existing.name)")
+                    
+                    // Unregister the old hotkey
+                    GlobalHotkeyManager.shared.unregisterHotkey(existing)
+                    
                     shortcuts[index] = Shortcut(
                         id: existing.id,
                         name: existing.name,
@@ -51,11 +55,24 @@ class ShortcutManager: ObservableObject {
         shortcuts.append(shortcut)
         saveShortcuts()
         
+        // Register the new hotkey if enabled
+        if shortcut.isEnabled {
+            let success = GlobalHotkeyManager.shared.registerHotkey(shortcut)
+            if !success {
+                AppLogger.shared.warning("Failed to register global hotkey for: \(shortcut.name)")
+            }
+        }
+        
         AppLogger.shared.info("Shortcut '\(shortcut.name)' added successfully")
     }
     
     func removeShortcut(withId id: UUID) {
         AppLogger.shared.info("Removing shortcut with id: \(id)")
+        
+        // Find and unregister the hotkey before removing
+        if let shortcut = shortcuts.first(where: { $0.id == id }) {
+            GlobalHotkeyManager.shared.unregisterHotkey(shortcut)
+        }
         
         shortcuts.removeAll { $0.id == id }
         saveShortcuts()
@@ -66,8 +83,21 @@ class ShortcutManager: ObservableObject {
         
         AppLogger.shared.info("Updating shortcut: \(shortcut.name)")
         
+        let oldShortcut = shortcuts[index]
+        
+        // Unregister old hotkey
+        GlobalHotkeyManager.shared.unregisterHotkey(oldShortcut)
+        
         shortcuts[index] = shortcut
         saveShortcuts()
+        
+        // Register new hotkey if enabled
+        if shortcut.isEnabled {
+            let success = GlobalHotkeyManager.shared.registerHotkey(shortcut)
+            if !success {
+                AppLogger.shared.warning("Failed to register global hotkey for updated shortcut: \(shortcut.name)")
+            }
+        }
     }
     
     private func hasConflict(_ shortcut: Shortcut) -> Bool {
@@ -156,6 +186,18 @@ class ShortcutManager: ObservableObject {
         do {
             shortcuts = try JSONDecoder().decode([Shortcut].self, from: data)
             AppLogger.shared.info("Loaded \(shortcuts.count) shortcuts from UserDefaults")
+            
+            // Register all enabled hotkeys on startup
+            for shortcut in shortcuts {
+                if shortcut.isEnabled {
+                    let success = GlobalHotkeyManager.shared.registerHotkey(shortcut)
+                    if success {
+                        AppLogger.shared.info("Registered startup hotkey: \(shortcut.name)")
+                    } else {
+                        AppLogger.shared.warning("Failed to register startup hotkey: \(shortcut.name)")
+                    }
+                }
+            }
         } catch {
             AppLogger.shared.error("Failed to load shortcuts: \(error)")
         }

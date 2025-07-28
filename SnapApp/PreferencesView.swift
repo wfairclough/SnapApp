@@ -11,6 +11,7 @@ import AppKit
 struct PreferencesView: View {
     @StateObject private var shortcutManager = ShortcutManager.shared
     @State private var showingAddSheet = false
+    @State private var hasAccessibilityPermission = false
     
     var body: some View {
         NavigationStack {
@@ -33,6 +34,36 @@ struct PreferencesView: View {
                 .padding(.bottom, 16)
                 
                 Divider()
+                
+                // Permissions Check
+                if !hasAccessibilityPermission {
+                    VStack(spacing: 12) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundColor(.orange)
+                            
+                            Text("Accessibility Permission Required")
+                                .font(.headline)
+                                .foregroundColor(.orange)
+                        }
+                        
+                        Text("Global shortcuts require accessibility permissions to work. Click below to grant access in System Settings.")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
+                        
+                        Button("Open System Settings") {
+                            GlobalHotkeyManager.shared.requestAccessibilityPermissions()
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.large)
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 16)
+                    .background(Color.orange.opacity(0.1))
+                    
+                    Divider()
+                }
                 
                 // Shortcuts List
                 VStack(alignment: .leading, spacing: 0) {
@@ -107,6 +138,12 @@ struct PreferencesView: View {
         .sheet(isPresented: $showingAddSheet) {
             AddShortcutView()
         }
+        .onAppear {
+            checkAccessibilityPermission()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            checkAccessibilityPermission()
+        }
     }
     
     private func deleteShortcuts(offsets: IndexSet) {
@@ -114,6 +151,10 @@ struct PreferencesView: View {
             let shortcut = shortcutManager.shortcuts[index]
             shortcutManager.removeShortcut(withId: shortcut.id)
         }
+    }
+    
+    private func checkAccessibilityPermission() {
+        hasAccessibilityPermission = GlobalHotkeyManager.shared.checkAccessibilityPermissions()
     }
 }
 
