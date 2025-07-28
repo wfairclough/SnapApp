@@ -44,6 +44,8 @@ class GlobalHotkeyManager {
             carbonModifiers |= UInt32(shiftKey)
         }
         
+        AppLogger.shared.info("Registering hotkey: \(shortcut.name), keyCode: \(shortcut.keyCode), carbonModifiers: \(carbonModifiers), display: \(shortcut.displayString)")
+        
         // Install event handler if not already installed
         installEventHandlerIfNeeded()
         
@@ -170,7 +172,16 @@ class GlobalHotkeyManager {
     }
     
     func requestAccessibilityPermissions() {
+        // First try the standard accessibility prompt
         let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue(): true] as CFDictionary
-        AXIsProcessTrustedWithOptions(options)
+        let isTrusted = AXIsProcessTrustedWithOptions(options)
+        
+        if !isTrusted {
+            // If that doesn't work, manually open System Settings to the accessibility page
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!
+                NSWorkspace.shared.open(url)
+            }
+        }
     }
 }
